@@ -130,7 +130,9 @@ impl Stronghold {
         let mut snapshot = self.snapshot.write()?;
         let mut clients = self.clients.write()?;
 
+        println!("Load snapshot");
         load_snapshot!(snapshot, snapshot_path, keyprovider);
+        println!("Loaded snapshot");
 
         // If a client has already been loaded returns an error
         if clients.contains_key(&client_id) {

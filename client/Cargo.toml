@@ -1,7 +1,7 @@
 [package]
 name = "iota_stronghold"
 version = "2.1.0"
-edition = "2021"
+edition = "2024"
 license = "Apache-2.0"
 readme = "README.md"
 description = "Client interface for Stronghold"

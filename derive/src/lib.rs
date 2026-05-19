@@ -42,7 +42,7 @@ pub fn permissions(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let derive_input = syn::parse_macro_input!(input as DeriveInput);
     let name = format!("{}Permission", derive_input.ident);
     let name = syn::Ident::new(&name, derive_input.ident.span());
-    let gen = match derive_input.data {
+    let stream = match derive_input.data {
         Data::Enum(data_enum) => {
             let unit_enum = build_plain(&name, &data_enum);
             let impl_permission = impl_permission(&name, &data_enum);
@@ -67,5 +67,5 @@ pub fn permissions(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
             }
         }
     };
-    gen.into()
+    stream.into()
 }
