@@ -192,9 +192,15 @@ impl From<ClientError> for SnapshotError {
     }
 }
 
-impl From<bincode::Error> for SnapshotError {
-    fn from(e: bincode::Error) -> Self {
-        SnapshotError::CorruptedContent(format!("bincode error: {}", e))
+impl From<bincode::error::EncodeError> for SnapshotError {
+    fn from(e: bincode::error::EncodeError) -> Self {
+        SnapshotError::CorruptedContent(format!("bincode encode error: {}", e))
+    }
+}
+
+impl From<bincode::error::DecodeError> for SnapshotError {
+    fn from(e: bincode::error::DecodeError) -> Self {
+        SnapshotError::CorruptedContent(format!("bincode decode error: {}", e))
     }
 }
 
