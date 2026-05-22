@@ -26,7 +26,7 @@ macro_rules! cache {
         use once_cell::sync::Lazy;
         use std::sync::Mutex;
         use engine::store::Cache;
-        use paste::paste;
+        use pastey::paste;
 
         paste! {
             // create a static instance of `Cache<K, V>` for the expression called `$EXPR_NAME_CACHE`.

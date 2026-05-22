@@ -192,9 +192,15 @@ impl From<ClientError> for SnapshotError {
     }
 }
 
-impl From<bincode::Error> for SnapshotError {
-    fn from(e: bincode::Error) -> Self {
-        SnapshotError::CorruptedContent(format!("bincode error: {}", e))
+impl From<wincode::WriteError> for SnapshotError {
+    fn from(e: wincode::WriteError) -> Self {
+        SnapshotError::CorruptedContent(format!("wincode write error: {}", e))
+    }
+}
+
+impl From<wincode::ReadError> for SnapshotError {
+    fn from(e: wincode::ReadError) -> Self {
+        SnapshotError::CorruptedContent(format!("wincode read error: {}", e))
     }
 }
 

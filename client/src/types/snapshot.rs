@@ -23,11 +23,23 @@ use std::{
 };
 use zeroize::{Zeroize, Zeroizing};
 
+use serde_wincode::SerdeCompat;
+
 use crate::{
     procedures::{DeriveSecret, X25519DiffieHellman},
     sync::{self, KeyProvider, SnapshotHierarchy, SyncClients, SyncClientsConfig, SyncSnapshots, SyncSnapshotsConfig},
     ClientError, KeyStore, Location, Provider, SnapshotError,
 };
+
+/// Serialize a serde-compatible value using wincode's bincode-compatible wire format.
+fn wincode_ser<T: serde::Serialize>(value: &T) -> wincode::WriteResult<Vec<u8>> {
+    <SerdeCompat<T> as wincode::Serialize>::serialize(value)
+}
+
+/// Deserialize a serde-compatible value using wincode's bincode-compatible wire format.
+fn wincode_deser<'de, T: serde::Deserialize<'de>>(bytes: &'de [u8]) -> wincode::ReadResult<T> {
+    <SerdeCompat<T> as wincode::Deserialize>::deserialize(bytes)
+}
 
 type EncryptedClientState = (Vec<u8>, Cache<Vec<u8>, Vec<u8>>);
 
@@ -177,7 +189,7 @@ impl Snapshot {
             None => return Ok((HashMap::default(), DbView::default(), Cache::default())),
         };
         let decrypted = snapshot::decrypt_content(&mut encrypted.as_slice(), &key)?;
-        let (keys, db) = bincode::deserialize(&decrypted)?;
+        let (keys, db) = wincode_deser(&decrypted)?;
         Ok((keys, db, store.clone()))
     }
 
@@ -207,7 +219,7 @@ impl Snapshot {
     ) -> Result<Self, SnapshotError> {
         let data = snapshot::decrypt_file(snapshot_path.as_path(), key)?;
 
-        let state = bincode::deserialize(&data)?;
+        let state = wincode_deser(&data)?;
         Snapshot::from_state(state, key, write_key)
     }
 
@@ -215,7 +227,7 @@ impl Snapshot {
     /// TODO: Add associated data.
     pub fn write_to_snapshot(&self, snapshot_path: &SnapshotPath, use_key: UseKey) -> Result<(), SnapshotError> {
         let state = self.get_snapshot_state()?;
-        let data = Zeroizing::new(bincode::serialize(&state)?);
+        let data = Zeroizing::new(wincode_ser(&state)?);
 
         match use_key {
             UseKey::Key(k) => snapshot::encrypt_file(&data, snapshot_path.as_path(), &k).map_err(|e| e.into()),
@@ -245,7 +257,7 @@ impl Snapshot {
             Cache<Vec<u8>, Vec<u8>>,
         ),
     ) -> Result<(), SnapshotError> {
-        let bytes = Zeroizing::new(bincode::serialize(&(keys, db))?);
+        let bytes = Zeroizing::new(wincode_ser(&(keys, db))?);
         let vault_id = VaultId(id.0);
         let key = random_vec(snapshot::KEY_SIZE);
         let key_ref: &[u8; snapshot::KEY_SIZE] = (*key).as_slice().try_into().unwrap();
@@ -354,7 +366,7 @@ impl Snapshot {
         let data = snapshot::decompress(decrypted.as_ref())
             .map(Zeroizing::new)
             .map_err(|e| SnapshotError::CorruptedContent(e.to_string()))?;
-        let state: SnapshotState = bincode::deserialize(&data)?;
+        let state: SnapshotState = wincode_deser(&data)?;
         self.merge_state(state, config)
     }
 
@@ -383,7 +395,7 @@ impl Snapshot {
         }
 
         blank.import_records(export, &old_keys, &SyncSnapshotsConfig::default())?;
-        let data = Zeroizing::new(bincode::serialize(&blank)?);
+        let data = Zeroizing::new(wincode_ser(&blank)?);
         let compressed_plain = Zeroizing::new(snapshot::compress(data.as_slice()));
         let mut buffer = Vec::new();
 
