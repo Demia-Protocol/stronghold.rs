@@ -38,7 +38,7 @@ iota-crypto = { version = "0.23", default-features = false, features = [
   "x25519"
 ] }
 hkdf = { version = "0.12" }
-wincode = "0.5"
+wincode = "0.6"
 serde-wincode = "0.1"
 pin-project = { version = "1.0.10", optional = true }
 futures = { version = "0.3.21", optional = true }
